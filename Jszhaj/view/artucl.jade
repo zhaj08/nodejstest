@@ -1,0 +1,7 @@
+extends layout
+
+block content
+    -  var data=JSON.parse(blog);
+    h1  #{data.title}
+    Published: #{data.published}
+        p   #{data.body}

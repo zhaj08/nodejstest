@@ -1,0 +1,17 @@
+extends layout
+
+block content
+    h1  计算值列表
+    form(action='/ssqjs/insert_into_ssq',method='post',enctype='multipart/form-data')
+        input(type='file',name='file')
+        |&nbsp
+        input(type='submit',value='提交')
+    #ssq-js
+        ul
+            li 1
+            li 2
+            li 3
+            li 4
+            li 5
+            li 6
+
