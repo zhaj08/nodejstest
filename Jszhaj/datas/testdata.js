@@ -3,8 +3,9 @@ var fs=require('fs');
 var exc=utilexcle.parse('f://ddd.xlsx');
 var config=require('../config/config');
 var mysql=require('mysql');//加载mysql框架
+var promise=require('bluebird');
 
-var async=require('async-await');
+
 
 //模拟数据
 var entries=[
@@ -15,6 +16,10 @@ var entries=[
     {"id":5, "title":"第五篇", "body":"正文", "published":"6/10/2013"},
     {"id":6, "title":"第六篇", "body":"正文", "published":"6/12/2013"}
 ]
+
+
+
+
 
 exports.getDatas=function () {
     return entries;
@@ -67,47 +72,41 @@ function handledata() {
 }
 
 
-
-
+function asHand(sql) {
+    return new promise(function (resolve,obj) {
+            execuSelect(sql,function (err, result) {
+                if(err){
+                    obj(err);
+                }else {
+                    var json=JSON.stringify(result);
+                    resolve(json);
+                }
+            });
+    });
+};
 
 function insertssq(sw) {
-
-
+    var selectsql="select count(if(same3time!='0',same3time,null)) as same3," +
+                          "count(if(same4time!='0',same4time,null)) as same4," +
+                          "count(if(same5time!='0',same5time,null)) as same5," +
+                          "count(if(same6time!='0',same6time,null)) as same6," +
+                          "count(if(same7time!='0',same7time,null)) as same7 " +
+                          "from samesum where opentime= ";
+    var datas=[];
+    var n=0;
     sw.forEach(function (t) {
-        var hhh=[];
-            for(var n=3;n<8;n++){
-                (function (n) {
-                    var selectsql='select count(same'+n.toString()+'time) as same'+n.toString()+' from samesum where opentime='+t[0].toString()+' and '+'same'+n.toString()+'time>0';
-                    execuSelect(selectsql,function (err, result) {
-                        if(err){
-                            console.log('错误'+err);
-                        }else {
-                            var json=JSON.stringify(result);
-
-                            hhh.push(json[10]);
-                        }
-
-                    });
-                    console.log(hhh);
-                })(n);
-
-            }
-
-
-
-
-
-    });
-
-
-
-
-
-    var insertSql='insert into ssq_qhxj_fq(id,opentime,diyi,dier,disan,disi,diwu,diliu,lq,same3,same4,same5,same6,same7) values(0,?,?,?,?,?,?,?,?,?,?,?,?,?)'
-
-
-
-
+        asHand(selectsql+t[0]).then(function (ee) {
+            var json=JSON.parse(ee)[0];
+            t.push(json.same3);
+            t.push(json.same4);
+            t.push(json.same5);
+            t.push(json.same6);
+            t.push(json.same7);
+        }).finally(function () {
+            var insertSql='insert into ssq_qhxj_fq(id,opentime,diyi,dier,disan,disi,diwu,diliu,lq,same3,same4,same5,same6,same7) values(0,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+            execuInsert(insertSql,t);
+        });
+    })
 
 }
 function insertsum(ws) {
@@ -151,6 +150,8 @@ function insertsum(ws) {
 }
 
 function execuInsert(sql, datas) {
+    console.log(datas);
+
     var conn=mysql.createConnection(config.mysql);
     conn.connect();
     conn.query(sql,datas,function (err,result) {
