@@ -1,14 +1,6 @@
 
 var handle=require('../dao/datahandle');
 
-
-
-
-
-
-
-
-
 // writeExl(wrows);
 
 // function writeExl(datas) {
@@ -17,9 +9,6 @@ var handle=require('../dao/datahandle');
 // }
 exports.insertSsq=function (req,callback) {
     var insertSql='insert into ssq_qhxj_fq(id,diyi,dier,disan,disi,diwu,diliu,lq,result,remark1,remark2,remark3) values(0,?,?,?,?,?,?,?,?,?,?,?)';
-
-
-
     handle.executeSql(req,insertSql,wrows,function (err,result) {
         if(err){
             callback(err);
@@ -30,9 +19,8 @@ exports.insertSsq=function (req,callback) {
     });
 
 }
-
 exports.selectSsq=function (req,callback) {
-    var selectSql='select id,diyi,dier,disan,disi,diwu,diliu,lq,result,remark1,remark2,remark3 from ssq_qhxj_fq';
+    var selectSql='select id,opentime,diyi,dier,disan,disi,diwu,diliu,lq,same3,same4,same5,same6,same7 from ssq_qhxj_fq';
     handle.executeSql(req,selectSql,function (err, result) {
         if(err){
             callback(err);

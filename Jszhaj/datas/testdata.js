@@ -4,9 +4,6 @@ var exc=utilexcle.parse('f://ddd.xlsx');
 var config=require('../config/config');
 var mysql=require('mysql');//加载mysql框架
 var promise=require('bluebird');
-
-
-
 //模拟数据
 var entries=[
     {"id":1, "title":"第一篇", "body":"正文", "published":"6/2/2013"},
@@ -16,15 +13,9 @@ var entries=[
     {"id":5, "title":"第五篇", "body":"正文", "published":"6/10/2013"},
     {"id":6, "title":"第六篇", "body":"正文", "published":"6/12/2013"}
 ]
-
-
-
-
-
 exports.getDatas=function () {
     return entries;
 }
-
 exports.getEntry=function (id) {
     for(var i=0;i<entries.length;i++){
 
@@ -33,10 +24,8 @@ exports.getEntry=function (id) {
         }
     }
 }
-
-handledata();
-
-function handledata() {
+//处理数据
+exports.handSum=function() {
     var sheet1=exc[0];
     var wrows=[];
     for(var i=0;i<sheet1.data.length;i++){
@@ -57,34 +46,36 @@ function handledata() {
         //向数组第一位插入一个或多个元素
         dataR.unshift(row[0]);
         wrows.push(dataR);
-
-
-
-
-
     }
-    //
-
-
-    // insertsum(wrows);
-    insertssq(wrows);
+    //插入基本数据
+    insertsum(wrows);
 
 }
-
-
-function asHand(sql) {
-    return new promise(function (resolve,obj) {
-            execuSelect(sql,function (err, result) {
-                if(err){
-                    obj(err);
-                }else {
-                    var json=JSON.stringify(result);
-                    resolve(json);
-                }
-            });
-    });
-};
-
+exports.handSsq=function () {
+    var sheet1=exc[0];
+    var wrows=[];
+    for(var i=0;i<sheet1.data.length;i++){
+        var row=sheet1.data[i];
+        var dataR=[];
+        for(var j=1;j<row.length;j++){
+            var nums=row[j];
+            if(nums.toString().charAt(1)!=''){
+                var num=parseInt(nums.toString().charAt(0))+parseInt(nums.toString().charAt(1));
+                dataR.push(num);
+            }else{
+                dataR.push(nums);
+            }
+        }
+        dataR.sort(function (a, b) {
+            return a-b;
+        });
+        //向数组第一位插入一个或多个元素
+        dataR.unshift(row[0]);
+        wrows.push(dataR);
+    }
+    //插入计算后数据
+    insertssq(wrows);
+}
 function insertssq(sw) {
     var selectsql="select count(if(same3time!='0',same3time,null)) as same3," +
                           "count(if(same4time!='0',same4time,null)) as same4," +
@@ -92,8 +83,6 @@ function insertssq(sw) {
                           "count(if(same6time!='0',same6time,null)) as same6," +
                           "count(if(same7time!='0',same7time,null)) as same7 " +
                           "from samesum where opentime= ";
-    var datas=[];
-    var n=0;
     sw.forEach(function (t) {
         asHand(selectsql+t[0]).then(function (ee) {
             var json=JSON.parse(ee)[0];
@@ -107,8 +96,19 @@ function insertssq(sw) {
             execuInsert(insertSql,t);
         });
     })
-
 }
+function asHand(sql) {
+    return new promise(function (resolve,obj) {
+        execuSelect(sql,function (err, result) {
+            if(err){
+                obj(err);
+            }else {
+                var json=JSON.stringify(result);
+                resolve(json);
+            }
+        });
+    });
+};
 function insertsum(ws) {
     var insersum='insert into samesum(opentime,same3time,same4time,same5time,same6time,same7time) values(?,?,?,?,?,?)'
     var datax=[];
@@ -148,10 +148,7 @@ function insertsum(ws) {
 
     }
 }
-
 function execuInsert(sql, datas) {
-    console.log(datas);
-
     var conn=mysql.createConnection(config.mysql);
     conn.connect();
     conn.query(sql,datas,function (err,result) {
